@@ -1,6 +1,11 @@
-bidirectional interaction with claude code through slack. supports file attachments both ways.
+bidirectional interaction with claude code through slack. 
+
+spins up an agent instance in a tmux window and pipes input/output through a configurable slack channel.
+
+supports file attachments both ways (still janky).
 
 below are generated docs, if something is unclear/unreproducible lmk
+
 -amber
 
 ## Setup
