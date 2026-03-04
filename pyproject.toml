@@ -1,0 +1,9 @@
+[project]
+name = "claude-wrapper"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "python-dotenv>=1.2.2",
+    "slack-sdk>=3.40.1",
+]
