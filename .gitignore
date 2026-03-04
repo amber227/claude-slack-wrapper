@@ -1,0 +1,19 @@
+# Environment
+.env
+.python-version
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+
+# Claude Code
+claude_response.txt
+hook_debug.log
+/tmp/
+
+# OS
+.DS_Store
