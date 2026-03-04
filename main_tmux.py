@@ -129,36 +129,35 @@ while True:
 
                 text = msg.get('text', '')
 
-                # Handle attached files (images)
+                # Handle attached files
                 files = msg.get('files', [])
-                image_paths = []
+                file_paths = []
                 if files:
                     file_inbox_dir = work_dir / os.environ.get('FILE_INBOX', 'file_inbox')
                     file_inbox_dir.mkdir(exist_ok=True)
 
                     for file in files:
-                        if file.get('mimetype', '').startswith('image/'):
-                            # Download the image
-                            file_url = file.get('url_private_download') or file.get('url_private')
-                            file_name = file.get('name', f"image_{file['id']}")
-                            local_path = file_inbox_dir / file_name
+                        # Download all file types
+                        file_url = file.get('url_private_download') or file.get('url_private')
+                        file_name = file.get('name', f"file_{file['id']}")
+                        local_path = file_inbox_dir / file_name
 
-                            try:
-                                headers = {'Authorization': f'Bearer {os.environ["SLACK_BOT_TOKEN"]}'}
-                                response = requests.get(file_url, headers=headers)
-                                response.raise_for_status()
-                                local_path.write_bytes(response.content)
-                                image_paths.append(str(local_path))
-                                print(f"Downloaded image: {file_name}")
-                            except Exception as e:
-                                print(f"Failed to download {file_name}: {e}")
+                        try:
+                            headers = {'Authorization': f'Bearer {os.environ["SLACK_BOT_TOKEN"]}'}
+                            response = requests.get(file_url, headers=headers)
+                            response.raise_for_status()
+                            local_path.write_bytes(response.content)
+                            file_paths.append(str(local_path))
+                            print(f"Downloaded file: {file_name}")
+                        except Exception as e:
+                            print(f"Failed to download {file_name}: {e}")
 
-                # Build full message with image references
+                # Build full message with file references
                 full_message = text
-                if image_paths:
+                if file_paths:
                     if full_message:
                         full_message += "\n\n"
-                    full_message += "Attached images:\n" + "\n".join(image_paths)
+                    full_message += "Attached files:\n" + "\n".join(file_paths)
 
                 print(f"Slack -> Claude: {full_message}")
 
