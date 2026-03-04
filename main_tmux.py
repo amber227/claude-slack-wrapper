@@ -3,6 +3,8 @@ import os
 import subprocess
 import time
 import argparse
+import json
+import requests
 from pathlib import Path
 from slack_sdk import WebClient
 from dotenv import load_dotenv
@@ -32,7 +34,6 @@ print(f"Working directory: {work_dir}")
 
 # Setup hook configuration in work directory
 if work_dir != repo_dir:
-    import json
     work_claude_dir = work_dir / '.claude'
     work_claude_dir.mkdir(exist_ok=True)
 
@@ -129,7 +130,6 @@ while True:
                             local_path = file_inbox_dir / file_name
 
                             try:
-                                import requests
                                 headers = {'Authorization': f'Bearer {os.environ["SLACK_BOT_TOKEN"]}'}
                                 response = requests.get(file_url, headers=headers)
                                 response.raise_for_status()
@@ -153,6 +153,8 @@ while True:
                 subprocess.run([
                     'tmux', 'send-keys', '-t', session_name, '-l', full_message
                 ])
+                # Small delay to ensure text is fully inserted before submitting
+                time.sleep(0.1)
                 subprocess.run([
                     'tmux', 'send-keys', '-t', session_name, 'C-m'
                 ])
