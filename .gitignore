@@ -14,6 +14,7 @@ venv/
 claude_response.txt
 hook_debug.log
 /tmp/
+slack_images/
 
 # OS
 .DS_Store

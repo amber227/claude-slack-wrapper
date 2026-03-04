@@ -79,12 +79,45 @@ while True:
                     continue
 
                 text = msg.get('text', '')
-                print(f"Slack -> Claude: {text}")
+
+                # Handle attached files (images)
+                files = msg.get('files', [])
+                image_paths = []
+                if files:
+                    slack_images_dir = work_dir / 'slack_images'
+                    slack_images_dir.mkdir(exist_ok=True)
+
+                    for file in files:
+                        if file.get('mimetype', '').startswith('image/'):
+                            # Download the image
+                            file_url = file.get('url_private_download') or file.get('url_private')
+                            file_name = file.get('name', f"image_{file['id']}")
+                            local_path = slack_images_dir / file_name
+
+                            try:
+                                import requests
+                                headers = {'Authorization': f'Bearer {os.environ["SLACK_BOT_TOKEN"]}'}
+                                response = requests.get(file_url, headers=headers)
+                                response.raise_for_status()
+                                local_path.write_bytes(response.content)
+                                image_paths.append(str(local_path))
+                                print(f"Downloaded image: {file_name}")
+                            except Exception as e:
+                                print(f"Failed to download {file_name}: {e}")
+
+                # Build full message with image references
+                full_message = text
+                if image_paths:
+                    if full_message:
+                        full_message += "\n\n"
+                    full_message += "Attached images:\n" + "\n".join(image_paths)
+
+                print(f"Slack -> Claude: {full_message}")
 
                 # Send to Claude via tmux
                 # Use -l to send text literally, then send C-m separately to submit
                 subprocess.run([
-                    'tmux', 'send-keys', '-t', session_name, '-l', text
+                    'tmux', 'send-keys', '-t', session_name, '-l', full_message
                 ])
                 subprocess.run([
                     'tmux', 'send-keys', '-t', session_name, 'C-m'

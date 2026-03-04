@@ -80,6 +80,8 @@ After adding scopes, reinstall the app to your workspace.
 1. Wrapper spawns Claude Code in a tmux session
 2. Polls Slack for new messages
 3. Sends Slack messages to Claude Code
+   - Text messages are forwarded directly
+   - Images attached to messages are downloaded to `slack_images/` and file paths are included in the prompt
 4. When Claude finishes responding, Stop hook writes response to a file
 5. Wrapper reads the file and posts response to Slack
 
