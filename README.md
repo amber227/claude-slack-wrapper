@@ -1,6 +1,7 @@
-# Claude Code Slack Wrapper
+bidirectional interaction with claude code through slack. supports file attachments both ways.
 
-A simple wrapper that allows bidirectional interaction with Claude Code through Slack.
+below are generated docs, if something is unclear/unreproducible lmk
+-amber
 
 ## Setup
 
