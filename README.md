@@ -85,18 +85,23 @@ After adding scopes, reinstall the app to your workspace.
 4. When Claude finishes responding, Stop hook writes response to a file
 5. Wrapper reads the file and posts response to Slack
 
-### Automatic Image Forwarding
+### Automatic File Forwarding (Outbox)
 
-The wrapper monitors specified directories for new image files and automatically uploads them to Slack.
+The wrapper monitors specified directories for new files and automatically uploads them to Slack.
 
 **Configuration** (in `.env`):
 ```bash
-IMAGE_WATCH_DIRS=.
+FILE_OUTBOX=.
+FILE_OUTBOX_EXTENSIONS=.png,.jpg,.jpeg,.gif,.bmp,.webp
 ```
 
-Set to comma-separated relative paths to monitor multiple directories:
+Set `FILE_OUTBOX` to comma-separated relative paths to monitor multiple directories:
 ```bash
-IMAGE_WATCH_DIRS=.,screenshots,outputs
+FILE_OUTBOX=.,screenshots,outputs
 ```
 
-Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP
+Set `FILE_OUTBOX_EXTENSIONS` to specify which file types to watch:
+```bash
+FILE_OUTBOX_EXTENSIONS=.png,.jpg  # Only PNG and JPG
+FILE_OUTBOX_EXTENSIONS=*          # All file types
+```

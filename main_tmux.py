@@ -50,19 +50,29 @@ time.sleep(3)  # Let Claude initialize
 # Track latest message timestamp
 latest_ts = init_msg['ts']
 
-# Image monitoring setup
-image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
-watch_dirs = [work_dir / d.strip() for d in os.environ.get('IMAGE_WATCH_DIRS', '.').split(',')]
-seen_images = set()
+# File outbox monitoring setup
+extensions_str = os.environ.get('FILE_OUTBOX_EXTENSIONS', '.png,.jpg,.jpeg,.gif,.bmp,.webp')
+if extensions_str.strip() == '*':
+    file_extensions = None  # Match all files
+else:
+    file_extensions = {ext.strip().lower() for ext in extensions_str.split(',')}
 
-# Initialize with existing images
+watch_dirs = [work_dir / d.strip() for d in os.environ.get('FILE_OUTBOX', '.').split(',')]
+seen_files = set()
+
+# Initialize with existing files
 for watch_dir in watch_dirs:
     if watch_dir.exists():
-        for img in watch_dir.glob('*'):
-            if img.suffix.lower() in image_extensions and img.is_file():
-                seen_images.add(img)
+        for file in watch_dir.glob('*'):
+            if file.is_file():
+                if file_extensions is None or file.suffix.lower() in file_extensions:
+                    seen_files.add(file)
 
-print(f"Monitoring for images in: {watch_dirs}")
+print(f"Monitoring for files in: {watch_dirs}")
+if file_extensions:
+    print(f"Watching extensions: {file_extensions}")
+else:
+    print(f"Watching all file types")
 
 # Main loop
 while True:
@@ -134,23 +144,28 @@ while True:
             # Post to Slack
             client.chat_postMessage(channel=channel, text=response)
 
-        # Check for new images
+        # Check for new files in outbox
         for watch_dir in watch_dirs:
             if not watch_dir.exists():
                 continue
-            for img in watch_dir.glob('*'):
-                if img.suffix.lower() in image_extensions and img.is_file() and img not in seen_images:
-                    print(f"New image detected: {img.name}")
-                    try:
-                        client.files_upload_v2(
-                            channel=channel,
-                            file=str(img),
-                            title=img.name
-                        )
-                        print(f"Uploaded image to Slack: {img.name}")
-                        seen_images.add(img)
-                    except Exception as e:
-                        print(f"Failed to upload {img.name}: {e}")
+            for file in watch_dir.glob('*'):
+                if not file.is_file() or file in seen_files:
+                    continue
+                # Check if file matches extensions filter
+                if file_extensions is not None and file.suffix.lower() not in file_extensions:
+                    continue
+
+                print(f"New file detected: {file.name}")
+                try:
+                    client.files_upload_v2(
+                        channel=channel,
+                        file=str(file),
+                        title=file.name
+                    )
+                    print(f"Uploaded file to Slack: {file.name}")
+                    seen_files.add(file)
+                except Exception as e:
+                    print(f"Failed to upload {file.name}: {e}")
 
         time.sleep(1)
 
