@@ -31,7 +31,13 @@ After adding scopes, reinstall the app to your workspace.
    uv add slack-sdk python-dotenv
    ```
 
-2. Hook configuration is already set up in `.claude/settings.json`:
+2. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Slack tokens and channel
+   ```
+
+3. Hook configuration is already set up in `.claude/settings.json`:
    ```json
    {
      "hooks": {
@@ -49,7 +55,7 @@ After adding scopes, reinstall the app to your workspace.
    }
    ```
 
-3. Run the wrapper:
+4. Run the wrapper:
    ```bash
    uv run main_tmux.py
    ```
