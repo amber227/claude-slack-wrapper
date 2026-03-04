@@ -26,7 +26,7 @@ session_name = "claude-wrapper"
 
 # Get channel ID
 channel_str = os.environ["SLACK_CHANNEL"]
-init_msg = client.chat_postMessage(channel=channel_str, text="Wrapper Started (tmux)")
+init_msg = client.chat_postMessage(channel=channel_str, text="============ *Start of New Session* ============")
 channel = init_msg['channel']
 
 print(f"Using channel: {channel}")
