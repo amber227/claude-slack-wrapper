@@ -60,6 +60,13 @@ After adding scopes, reinstall the app to your workspace.
    uv run main_tmux.py
    ```
 
+   To run Claude Code in a different directory:
+   ```bash
+   uv run main_tmux.py --directory /path/to/project
+   # or short form:
+   uv run main_tmux.py -d /path/to/project
+   ```
+
 ## Features
 
 ### Bidirectional Slack ↔ Claude Code Communication

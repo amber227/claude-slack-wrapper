@@ -2,14 +2,21 @@
 import os
 import subprocess
 import time
+import argparse
 from pathlib import Path
 from slack_sdk import WebClient
 from dotenv import load_dotenv
+
+# Parse arguments
+parser = argparse.ArgumentParser(description='Claude Code Slack wrapper')
+parser.add_argument('-d', '--directory', type=str, help='Directory to run Claude Code in (defaults to wrapper repo)')
+args = parser.parse_args()
 
 load_dotenv()
 
 # Setup
 repo_dir = Path(__file__).parent.absolute()
+work_dir = Path(args.directory).absolute() if args.directory else repo_dir
 client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 response_file = repo_dir / 'claude_response.txt'
 session_name = "claude-wrapper"
@@ -20,12 +27,13 @@ init_msg = client.chat_postMessage(channel=channel_str, text="🤖 Claude Code w
 channel = init_msg['channel']
 
 print(f"Using channel: {channel}")
+print(f"Working directory: {work_dir}")
 
 # Create tmux session with Claude Code
 subprocess.run(['tmux', 'kill-session', '-t', session_name], capture_output=True)
 subprocess.run([
     'tmux', 'new-session', '-d', '-s', session_name,
-    '-c', str(repo_dir),
+    '-c', str(work_dir),
     'claude', 'code'
 ])
 
@@ -37,7 +45,7 @@ latest_ts = init_msg['ts']
 
 # Image monitoring setup
 image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
-watch_dirs = [repo_dir / d.strip() for d in os.environ.get('IMAGE_WATCH_DIRS', '.').split(',')]
+watch_dirs = [work_dir / d.strip() for d in os.environ.get('IMAGE_WATCH_DIRS', '.').split(',')]
 seen_images = set()
 
 # Initialize with existing images
