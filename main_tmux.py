@@ -26,7 +26,7 @@ session_name = "claude-wrapper"
 
 # Get channel ID
 channel_str = os.environ["SLACK_CHANNEL"]
-init_msg = client.chat_postMessage(channel=channel_str, text="🤖 Claude Code wrapper started (tmux)")
+init_msg = client.chat_postMessage(channel=channel_str, text="Wrapper Started (tmux)")
 channel = init_msg['channel']
 
 print(f"Using channel: {channel}")
@@ -97,7 +97,7 @@ else:
     file_extensions = {ext.strip().lower() for ext in extensions_str.split(',')}
 
 watch_dirs = [work_dir / d.strip() for d in os.environ.get('FILE_OUTBOX', '.').split(',')]
-seen_files = set()
+seen_files = {}  # Maps file path to mtime
 
 # Initialize with existing files
 for watch_dir in watch_dirs:
@@ -105,7 +105,7 @@ for watch_dir in watch_dirs:
         for file in watch_dir.glob('*'):
             if file.is_file():
                 if file_extensions is None or file.suffix.lower() in file_extensions:
-                    seen_files.add(file)
+                    seen_files[file] = file.stat().st_mtime
 
 print(f"Monitoring for files in: {watch_dirs}")
 if file_extensions:
@@ -184,18 +184,24 @@ while True:
             # Post to Slack
             client.chat_postMessage(channel=channel, text=response)
 
-        # Check for new files in outbox
+        # Check for new or modified files in outbox
         for watch_dir in watch_dirs:
             if not watch_dir.exists():
                 continue
             for file in watch_dir.glob('*'):
-                if not file.is_file() or file in seen_files:
+                if not file.is_file():
                     continue
                 # Check if file matches extensions filter
                 if file_extensions is not None and file.suffix.lower() not in file_extensions:
                     continue
 
-                print(f"New file detected: {file.name}")
+                # Check if file is new or modified
+                current_mtime = file.stat().st_mtime
+                if file in seen_files and seen_files[file] == current_mtime:
+                    continue  # File unchanged
+
+                is_new = file not in seen_files
+                print(f"{'New' if is_new else 'Modified'} file detected: {file.name}")
                 try:
                     client.files_upload_v2(
                         channel=channel,
@@ -203,7 +209,7 @@ while True:
                         title=file.name
                     )
                     print(f"Uploaded file to Slack: {file.name}")
-                    seen_files.add(file)
+                    seen_files[file] = current_mtime
                 except Exception as e:
                     print(f"Failed to upload {file.name}: {e}")
 
