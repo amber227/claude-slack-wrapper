@@ -67,6 +67,12 @@ After adding scopes, reinstall the app to your workspace.
    uv run main_tmux.py -d /path/to/project
    ```
 
+   To skip permission prompts (unsafe mode):
+   ```bash
+   uv run main_tmux.py --unsafe
+   ```
+   ⚠️ **Warning:** This enables `--dangerously-skip-permissions` which allows Claude Code to execute operations without prompting. Use only in trusted environments.
+
 ## Features
 
 ### Bidirectional Slack ↔ Claude Code Communication

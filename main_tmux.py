@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 # Parse arguments
 parser = argparse.ArgumentParser(description='Claude Code Slack wrapper')
 parser.add_argument('-d', '--directory', type=str, help='Directory to run Claude Code in (defaults to wrapper repo)')
+parser.add_argument('--unsafe', action='store_true', help='Skip permissions prompts (enables --dangerously-skip-permissions)')
 args = parser.parse_args()
 
 load_dotenv()
@@ -31,11 +32,17 @@ print(f"Working directory: {work_dir}")
 
 # Create tmux session with Claude Code
 subprocess.run(['tmux', 'kill-session', '-t', session_name], capture_output=True)
+
+# Build claude command
+claude_cmd = ['claude', 'code']
+if args.unsafe:
+    claude_cmd.append('--dangerously-skip-permissions')
+    print("⚠️  Running in unsafe mode (permissions disabled)")
+
 subprocess.run([
     'tmux', 'new-session', '-d', '-s', session_name,
-    '-c', str(work_dir),
-    'claude', 'code'
-])
+    '-c', str(work_dir)
+] + claude_cmd)
 
 print(f"Claude Code started in tmux session '{session_name}'")
 time.sleep(3)  # Let Claude initialize
