@@ -72,6 +72,20 @@ subprocess.run([
 print(f"Claude Code started in tmux session '{session_name}'")
 time.sleep(3)  # Let Claude initialize
 
+# Send initial context about Slack wrapper interface
+context_file = repo_dir / 'SLACK_CONTEXT.md'
+if context_file.exists():
+    context_message = context_file.read_text()
+    subprocess.run([
+        'tmux', 'send-keys', '-t', session_name, '-l', context_message
+    ])
+    time.sleep(0.1)
+    subprocess.run([
+        'tmux', 'send-keys', '-t', session_name, 'C-m'
+    ])
+    print("Sent Slack wrapper context to Claude Code")
+    time.sleep(2)  # Wait for Claude to process initial message
+
 # Track latest message timestamp
 latest_ts = init_msg['ts']
 
