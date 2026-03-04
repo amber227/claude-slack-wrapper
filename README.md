@@ -4,6 +4,28 @@ A simple wrapper that allows bidirectional interaction with Claude Code through 
 
 ## Setup
 
+### Slack App OAuth Permissions
+
+Your Slack app needs the following Bot Token Scopes:
+
+**Required:**
+- `chat:write` - Post messages
+- `channels:history` - Read public channel messages
+- `channels:read` - List public channels
+- `groups:history` - Read private channel messages
+- `files:write` - Upload images
+
+**Optional (depending on usage):**
+- `app_mentions:read` - Respond to @mentions
+- `im:history`, `im:read`, `im:write` - Direct messages
+- `reactions:write` - Add reactions to messages
+
+Configure these at: https://api.slack.com/apps → Your App → OAuth & Permissions → Scopes
+
+After adding scopes, reinstall the app to your workspace.
+
+### Installation
+
 1. Install dependencies:
    ```bash
    uv add slack-sdk python-dotenv
@@ -15,9 +37,9 @@ A simple wrapper that allows bidirectional interaction with Claude Code through 
      "hooks": {
        "Stop": [
          {
-           "matchers": [],
-           "handlers": [
+           "hooks": [
              {
+               "type": "command",
                "command": "uv run stop_hook.py"
              }
            ]
@@ -32,10 +54,28 @@ A simple wrapper that allows bidirectional interaction with Claude Code through 
    uv run main_tmux.py
    ```
 
-## How it works
+## Features
 
-1. Wrapper spawns Claude Code as a subprocess
+### Bidirectional Slack ↔ Claude Code Communication
+
+1. Wrapper spawns Claude Code in a tmux session
 2. Polls Slack for new messages
-3. Sends Slack messages to Claude Code's stdin
+3. Sends Slack messages to Claude Code
 4. When Claude finishes responding, Stop hook writes response to a file
 5. Wrapper reads the file and posts response to Slack
+
+### Automatic Image Forwarding
+
+The wrapper monitors specified directories for new image files and automatically uploads them to Slack.
+
+**Configuration** (in `.env`):
+```bash
+IMAGE_WATCH_DIRS=.
+```
+
+Set to comma-separated relative paths to monitor multiple directories:
+```bash
+IMAGE_WATCH_DIRS=.,screenshots,outputs
+```
+
+Supported formats: PNG, JPG, JPEG, GIF, BMP, WEBP

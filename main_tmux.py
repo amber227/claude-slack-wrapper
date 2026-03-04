@@ -35,6 +35,20 @@ time.sleep(3)  # Let Claude initialize
 # Track latest message timestamp
 latest_ts = init_msg['ts']
 
+# Image monitoring setup
+image_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
+watch_dirs = [repo_dir / d.strip() for d in os.environ.get('IMAGE_WATCH_DIRS', '.').split(',')]
+seen_images = set()
+
+# Initialize with existing images
+for watch_dir in watch_dirs:
+    if watch_dir.exists():
+        for img in watch_dir.glob('*'):
+            if img.suffix.lower() in image_extensions and img.is_file():
+                seen_images.add(img)
+
+print(f"Monitoring for images in: {watch_dirs}")
+
 # Main loop
 while True:
     try:
@@ -71,6 +85,24 @@ while True:
 
             # Post to Slack
             client.chat_postMessage(channel=channel, text=response)
+
+        # Check for new images
+        for watch_dir in watch_dirs:
+            if not watch_dir.exists():
+                continue
+            for img in watch_dir.glob('*'):
+                if img.suffix.lower() in image_extensions and img.is_file() and img not in seen_images:
+                    print(f"New image detected: {img.name}")
+                    try:
+                        client.files_upload_v2(
+                            channel=channel,
+                            file=str(img),
+                            title=img.name
+                        )
+                        print(f"Uploaded image to Slack: {img.name}")
+                        seen_images.add(img)
+                    except Exception as e:
+                        print(f"Failed to upload {img.name}: {e}")
 
         time.sleep(1)
 
