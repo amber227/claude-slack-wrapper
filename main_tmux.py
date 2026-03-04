@@ -30,6 +30,30 @@ channel = init_msg['channel']
 print(f"Using channel: {channel}")
 print(f"Working directory: {work_dir}")
 
+# Setup hook configuration in work directory
+if work_dir != repo_dir:
+    import json
+    work_claude_dir = work_dir / '.claude'
+    work_claude_dir.mkdir(exist_ok=True)
+
+    hook_config = {
+        "hooks": {
+            "Stop": [
+                {
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": f"uv run {repo_dir}/stop_hook.py"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    (work_claude_dir / 'settings.json').write_text(json.dumps(hook_config, indent=2))
+    print(f"Created hook configuration in {work_claude_dir}")
+
 # Create tmux session with Claude Code
 subprocess.run(['tmux', 'kill-session', '-t', session_name], capture_output=True)
 
