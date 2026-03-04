@@ -30,7 +30,12 @@ try:
     last_assistant_message = ""
     with transcript_path.open('r') as tf:
         for line in tf:
-            entry = json.loads(line)
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                # Skip malformed lines
+                continue
+
             if entry.get('type') == 'assistant' or entry.get('role') == 'assistant':
                 # Get the text from content blocks (nested under 'message' field)
                 message_data = entry.get('message', entry)
