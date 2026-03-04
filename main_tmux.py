@@ -84,15 +84,15 @@ while True:
                 files = msg.get('files', [])
                 image_paths = []
                 if files:
-                    slack_images_dir = work_dir / 'slack_images'
-                    slack_images_dir.mkdir(exist_ok=True)
+                    file_inbox_dir = work_dir / os.environ.get('FILE_INBOX', 'file_inbox')
+                    file_inbox_dir.mkdir(exist_ok=True)
 
                     for file in files:
                         if file.get('mimetype', '').startswith('image/'):
                             # Download the image
                             file_url = file.get('url_private_download') or file.get('url_private')
                             file_name = file.get('name', f"image_{file['id']}")
-                            local_path = slack_images_dir / file_name
+                            local_path = file_inbox_dir / file_name
 
                             try:
                                 import requests
