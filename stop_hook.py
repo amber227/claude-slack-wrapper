@@ -26,9 +26,14 @@ try:
 
     with debug_file.open('a') as f:
         f.write(f"Reading transcript from: {transcript_path}\n")
+        f.write(f"Transcript size: {transcript_path.stat().st_size} bytes\n")
+
+    # Small delay to ensure transcript is fully written to disk
+    time.sleep(0.1)
 
     # Read the transcript (JSONL format - one JSON object per line)
-    last_assistant_message = ""
+    # We need to find the MOST RECENT assistant message
+    assistant_messages = []
     with transcript_path.open('r') as tf:
         for line in tf:
             try:
@@ -40,9 +45,26 @@ try:
             if entry.get('type') == 'assistant' or entry.get('role') == 'assistant':
                 # Get the text from content blocks (nested under 'message' field)
                 message_data = entry.get('message', entry)
+                timestamp = entry.get('timestamp', '')
                 for block in message_data.get('content', []):
                     if block.get('type') == 'text':
-                        last_assistant_message = block.get('text', '')
+                        text = block.get('text', '')
+                        if text:
+                            assistant_messages.append({
+                                'timestamp': timestamp,
+                                'text': text
+                            })
+
+    # Get the most recent message
+    last_assistant_message = ""
+    if assistant_messages:
+        last_assistant_message = assistant_messages[-1]['text']
+
+    with debug_file.open('a') as f:
+        f.write(f"Found {len(assistant_messages)} assistant messages in transcript\n")
+        if assistant_messages:
+            for i, msg in enumerate(assistant_messages[-3:]):  # Show last 3
+                f.write(f"  Message {i}: {msg['text'][:50]}... (ts: {msg['timestamp']})\n")
 
     message = last_assistant_message
 
