@@ -89,6 +89,9 @@ if context_file.exists():
 # Track latest message timestamp
 latest_ts = init_msg['ts']
 
+# Track last processed response to avoid duplicates
+last_response_id = None
+
 # File outbox monitoring setup
 extensions_str = os.environ.get('FILE_OUTBOX_EXTENSIONS', '.png,.jpg,.jpeg,.gif,.bmp,.webp')
 if extensions_str.strip() == '*':
@@ -175,13 +178,30 @@ while True:
 
         # Check for Claude response
         if response_file.exists():
-            response = response_file.read_text()
-            response_file.unlink()
+            content = response_file.read_text()
 
-            print(f"Claude -> Slack: {response[:100]}...")
+            # Parse response ID from first line
+            lines = content.split('\n', 1)
+            if len(lines) >= 2:
+                response_id = lines[0]
+                response = lines[1]
+            else:
+                # Fallback for old format without ID
+                response_id = None
+                response = content
 
-            # Post to Slack
-            client.chat_postMessage(channel=channel, text=response)
+            # Skip if we've already processed this response
+            if response_id and response_id == last_response_id:
+                print(f"Skipping duplicate response ID: {response_id}")
+                response_file.unlink()  # Still delete the file
+            else:
+                response_file.unlink()
+                last_response_id = response_id
+
+                print(f"Claude -> Slack (ID: {response_id}): {response[:100]}...")
+
+                # Post to Slack
+                client.chat_postMessage(channel=channel, text=response)
 
         # Check for new or modified files in outbox
         for watch_dir in watch_dirs:

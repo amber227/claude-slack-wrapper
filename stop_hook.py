@@ -2,6 +2,7 @@
 import json
 import sys
 import os
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -45,13 +46,18 @@ try:
 
     message = last_assistant_message
 
+    # Get timestamp from hook data to use as unique ID
+    response_id = hook_data.get('timestamp', str(time.time()))
+
     with debug_file.open('a') as f:
+        f.write(f"Response ID: {response_id}\n")
         f.write(f"Message length: {len(message)}\n")
         f.write(f"Message preview: {message[:100]}\n")
 
     # Write to a file that the wrapper will read (in the script's directory)
+    # Include response ID on first line to prevent duplicate processing
     response_file = Path(__file__).parent / 'claude_response.txt'
-    response_file.write_text(message)
+    response_file.write_text(f"{response_id}\n{message}")
 
     with debug_file.open('a') as f:
         f.write(f"Wrote response to: {response_file}\n")
