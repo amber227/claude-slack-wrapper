@@ -131,10 +131,12 @@ while True:
                     continue
 
                 text = msg.get('text', '')
+                print(f"Debug - Raw text from Slack: '{text}'")
 
                 # Handle attached files
                 files = msg.get('files', [])
                 file_paths = []
+                print(f"Debug - Found {len(files)} attached files")
                 if files:
                     file_inbox_dir = work_dir / os.environ.get('FILE_INBOX', 'file_inbox')
                     file_inbox_dir.mkdir(exist_ok=True)
@@ -169,8 +171,10 @@ while True:
                 subprocess.run([
                     'tmux', 'send-keys', '-t', session_name, '-l', full_message
                 ])
-                # Small delay to ensure text is fully inserted before submitting
-                time.sleep(0.1)
+                # Delay to ensure text is fully inserted before submitting
+                # Use longer delay if message has files attached (more complex)
+                delay = 0.5 if file_paths else 0.1
+                time.sleep(delay)
                 subprocess.run([
                     'tmux', 'send-keys', '-t', session_name, 'C-m'
                 ])
