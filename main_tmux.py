@@ -173,7 +173,7 @@ while True:
                 ])
                 # Delay to ensure text is fully inserted before submitting
                 # Use longer delay if message has files attached (more complex)
-                delay = 0.5 if file_paths else 0.1
+                delay = 5 if file_paths else 2
                 time.sleep(delay)
                 subprocess.run([
                     'tmux', 'send-keys', '-t', session_name, 'C-m'
