@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 from slack_sdk import WebClient
 from dotenv import load_dotenv
 import time
@@ -9,8 +10,19 @@ load_dotenv()
 client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 channel_str = os.environ["SLACK_CHANNEL"]
 
+# Get number of messages to delete
+if len(sys.argv) > 1:
+    try:
+        num_to_delete = int(sys.argv[1])
+        print(f"Will delete the last {num_to_delete} bot messages from channel: {channel_str}")
+    except ValueError:
+        print(f"Error: '{sys.argv[1]}' is not a valid number")
+        exit(1)
+else:
+    num_to_delete = None
+    print(f"This will delete ALL bot messages from channel: {channel_str}")
+
 # Confirmation prompt
-print(f"This will delete ALL bot messages from channel: {channel_str}")
 confirmation = input(f"Type the full channel name to confirm: ")
 
 if confirmation != channel_str:
@@ -33,8 +45,12 @@ while True:
     if not cursor:
         break
 
-# Filter for bot messages
+# Filter for bot messages (most recent first)
 bot_messages = [msg for msg in messages if msg.get('bot_id')]
+
+# Limit to N most recent if specified
+if num_to_delete is not None:
+    bot_messages = bot_messages[:num_to_delete]
 
 print(f"Found {len(bot_messages)} bot messages to delete out of {len(messages)} total messages")
 
