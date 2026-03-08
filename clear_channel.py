@@ -7,7 +7,11 @@ import time
 load_dotenv()
 
 client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
-channel = os.environ["SLACK_CHANNEL"]
+channel_str = os.environ["SLACK_CHANNEL"]
+
+# Get channel ID by posting a temporary message
+temp_msg = client.chat_postMessage(channel=channel_str, text="Clearing bot messages...")
+channel = temp_msg['channel']
 
 print(f"Fetching messages from channel {channel}...")
 
