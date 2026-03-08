@@ -297,6 +297,7 @@ while True:
 
     except KeyboardInterrupt:
         print("\nShutting down...")
+        client.chat_postMessage(channel=channel, text="============ *End of Session* ============")
         subprocess.run(['tmux', 'kill-session', '-t', session_name])
         break
     except Exception as e:
