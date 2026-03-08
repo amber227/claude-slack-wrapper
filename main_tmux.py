@@ -26,17 +26,17 @@ session_name = "claude-wrapper"
 
 # Get channel ID
 channel_str = os.environ["SLACK_CHANNEL"]
-init_msg = client.chat_postMessage(channel=channel_str, text="============ *Start of New Session* ============")
+init_msg = client.chat_postMessage(channel=channel_str, text="Initializing...")
 channel = init_msg['channel']
-
-# Post command summary
-commands_msg = """*Wrapper Commands:*
-• `\\restart` - Restart this instance (new conversation)
-• `\\ignore` - Drop message"""
-client.chat_postMessage(channel=channel, text=commands_msg)
 
 print(f"Using channel: {channel}")
 print(f"Working directory: {work_dir}")
+
+# Build claude command
+claude_cmd = ['claude', 'code']
+if args.unsafe:
+    claude_cmd.append('--dangerously-skip-permissions')
+    print("⚠️  Running in unsafe mode (permissions disabled)")
 
 # Setup hook configuration in work directory
 if work_dir != repo_dir:
@@ -61,36 +61,50 @@ if work_dir != repo_dir:
     (work_claude_dir / 'settings.json').write_text(json.dumps(hook_config, indent=2))
     print(f"Created hook configuration in {work_claude_dir}")
 
-# Create tmux session with Claude Code
-subprocess.run(['tmux', 'kill-session', '-t', session_name], capture_output=True)
-
-# Build claude command
-claude_cmd = ['claude', 'code']
-if args.unsafe:
-    claude_cmd.append('--dangerously-skip-permissions')
-    print("⚠️  Running in unsafe mode (permissions disabled)")
-
-subprocess.run([
-    'tmux', 'new-session', '-d', '-s', session_name,
-    '-c', str(work_dir)
-] + claude_cmd)
-
-print(f"Claude Code started in tmux session '{session_name}'")
-time.sleep(3)  # Let Claude initialize
-
-# Send initial context about Slack wrapper interface
 context_file = repo_dir / 'SLACK_CONTEXT.md'
-if context_file.exists():
-    context_message = context_file.read_text()
+
+def post_session_start_messages():
+    """Post session start messages to Slack."""
+    client.chat_postMessage(channel=channel, text="============ *Start of New Session* ============")
+    commands_msg = """*Wrapper Commands:*
+• `\\restart` - Restart this instance (new conversation)
+• `\\ignore` - Drop message"""
+    client.chat_postMessage(channel=channel, text=commands_msg)
+
+def post_session_end_message():
+    """Post session end message to Slack."""
+    client.chat_postMessage(channel=channel, text="============ *End of Session* ============")
+
+def start_claude_session():
+    """Start a new Claude Code tmux session."""
+    # Kill any existing session
+    subprocess.run(['tmux', 'kill-session', '-t', session_name], capture_output=True)
+
+    # Create new tmux session
     subprocess.run([
-        'tmux', 'send-keys', '-t', session_name, '-l', context_message
-    ])
-    time.sleep(0.1)
-    subprocess.run([
-        'tmux', 'send-keys', '-t', session_name, 'C-m'
-    ])
-    print("Sent Slack wrapper context to Claude Code")
-    time.sleep(2)  # Wait for Claude to process initial message
+        'tmux', 'new-session', '-d', '-s', session_name,
+        '-c', str(work_dir)
+    ] + claude_cmd)
+
+    print(f"Claude Code started in tmux session '{session_name}'")
+    time.sleep(3)  # Let Claude initialize
+
+    # Send initial context about Slack wrapper interface
+    if context_file.exists():
+        context_message = context_file.read_text()
+        subprocess.run([
+            'tmux', 'send-keys', '-t', session_name, '-l', context_message
+        ])
+        time.sleep(0.1)
+        subprocess.run([
+            'tmux', 'send-keys', '-t', session_name, 'C-m'
+        ])
+        print("Sent Slack wrapper context to Claude Code")
+        time.sleep(2)  # Wait for Claude to process initial message
+
+# Start initial session
+post_session_start_messages()
+start_claude_session()
 
 # Track latest message timestamp
 latest_ts = init_msg['ts']
@@ -133,35 +147,9 @@ def handle_command(command_text):
         return True
     elif command == '\\restart':
         print("Command: Restarting Claude Code instance...")
-        client.chat_postMessage(channel=channel, text="Restarting Claude Code instance...")
-
-        # Kill current tmux session
-        subprocess.run(['tmux', 'kill-session', '-t', session_name], capture_output=True)
-        time.sleep(1)
-
-        # Restart Claude Code in new tmux session
-        subprocess.run([
-            'tmux', 'new-session', '-d', '-s', session_name,
-            '-c', str(work_dir)
-        ] + claude_cmd)
-
-        print(f"Claude Code restarted in tmux session '{session_name}'")
-        time.sleep(3)  # Let Claude initialize
-
-        # Resend initial context
-        if context_file.exists():
-            context_message = context_file.read_text()
-            subprocess.run([
-                'tmux', 'send-keys', '-t', session_name, '-l', context_message
-            ])
-            time.sleep(0.1)
-            subprocess.run([
-                'tmux', 'send-keys', '-t', session_name, 'C-m'
-            ])
-            print("Resent Slack wrapper context to Claude Code")
-            time.sleep(2)
-
-        client.chat_postMessage(channel=channel, text="Claude Code instance restarted successfully.")
+        post_session_end_message()
+        start_claude_session()
+        post_session_start_messages()
         return True
     else:
         client.chat_postMessage(channel=channel, text=f"Unknown command: {command}")
@@ -297,7 +285,7 @@ while True:
 
     except KeyboardInterrupt:
         print("\nShutting down...")
-        client.chat_postMessage(channel=channel, text="============ *End of Session* ============")
+        post_session_end_message()
         subprocess.run(['tmux', 'kill-session', '-t', session_name])
         break
     except Exception as e:
