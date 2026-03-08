@@ -249,8 +249,9 @@ while True:
 
                 print(f"Claude -> Slack (ID: {response_id}): {response[:100]}...")
 
-                # Post to Slack
-                client.chat_postMessage(channel=channel, text=response)
+                # Post to Slack (convert markdown bold to italic for Slack)
+                slack_response = response.replace("**", "*")
+                client.chat_postMessage(channel=channel, text=slack_response)
 
         # Check for new or modified files in outbox
         for watch_dir in watch_dirs:
