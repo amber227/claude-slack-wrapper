@@ -116,6 +116,51 @@ if file_extensions:
 else:
     print(f"Watching all file types")
 
+# Command handler
+def handle_command(command_text):
+    """Handle wrapper commands that start with backslash."""
+    command = command_text.strip()
+
+    if command.startswith('\\ignore'):
+        # Drop the message silently
+        print(f"Command: Ignoring message: {command}")
+        return True
+    elif command == '\\restart':
+        print("Command: Restarting Claude Code instance...")
+        client.chat_postMessage(channel=channel, text="Restarting Claude Code instance...")
+
+        # Kill current tmux session
+        subprocess.run(['tmux', 'kill-session', '-t', session_name], capture_output=True)
+        time.sleep(1)
+
+        # Restart Claude Code in new tmux session
+        subprocess.run([
+            'tmux', 'new-session', '-d', '-s', session_name,
+            '-c', str(work_dir)
+        ] + claude_cmd)
+
+        print(f"Claude Code restarted in tmux session '{session_name}'")
+        time.sleep(3)  # Let Claude initialize
+
+        # Resend initial context
+        if context_file.exists():
+            context_message = context_file.read_text()
+            subprocess.run([
+                'tmux', 'send-keys', '-t', session_name, '-l', context_message
+            ])
+            time.sleep(0.1)
+            subprocess.run([
+                'tmux', 'send-keys', '-t', session_name, 'C-m'
+            ])
+            print("Resent Slack wrapper context to Claude Code")
+            time.sleep(2)
+
+        client.chat_postMessage(channel=channel, text="Claude Code instance restarted successfully.")
+        return True
+    else:
+        client.chat_postMessage(channel=channel, text=f"Unknown command: {command}")
+        return False
+
 # Main loop
 while True:
     try:
@@ -132,6 +177,12 @@ while True:
 
                 text = msg.get('text', '')
                 print(f"Debug - Raw text from Slack: '{text}'")
+
+                # Check if this is a command (starts with backslash)
+                if text.strip().startswith('\\'):
+                    handle_command(text.strip())
+                    latest_ts = msg['ts']
+                    continue
 
                 # Handle attached files
                 files = msg.get('files', [])
