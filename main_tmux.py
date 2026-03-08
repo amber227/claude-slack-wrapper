@@ -66,7 +66,7 @@ context_file = repo_dir / 'SLACK_CONTEXT.md'
 def post_session_start_messages():
     """Post session start messages to Slack."""
     client.chat_postMessage(channel=channel, text="============ *Start of New Session* ============")
-    commands_msg = """*Wrapper Commands:*
+    commands_msg = """*Commands:*
 • `\\restart` - Restart this instance (new conversation)
 • `\\ignore` - Drop message"""
     client.chat_postMessage(channel=channel, text=commands_msg)
