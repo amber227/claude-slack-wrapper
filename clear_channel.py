@@ -9,6 +9,14 @@ load_dotenv()
 client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 channel_str = os.environ["SLACK_CHANNEL"]
 
+# Confirmation prompt
+print(f"This will delete ALL bot messages from channel: {channel_str}")
+confirmation = input(f"Type the full channel name to confirm: ")
+
+if confirmation != channel_str:
+    print("Channel name mismatch. Aborting.")
+    exit(1)
+
 # Get channel ID by posting a temporary message
 temp_msg = client.chat_postMessage(channel=channel_str, text="Clearing bot messages...")
 channel = temp_msg['channel']
