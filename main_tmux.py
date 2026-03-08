@@ -29,6 +29,12 @@ channel_str = os.environ["SLACK_CHANNEL"]
 init_msg = client.chat_postMessage(channel=channel_str, text="============ *Start of New Session* ============")
 channel = init_msg['channel']
 
+# Post command summary
+commands_msg = """*Wrapper Commands:*
+• `\\restart` - Restart this instance (new conversation)
+• `\\ignore` - Drop message"""
+client.chat_postMessage(channel=channel, text=commands_msg)
+
 print(f"Using channel: {channel}")
 print(f"Working directory: {work_dir}")
 
