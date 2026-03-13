@@ -331,9 +331,23 @@ while True:
 
                 print(f"Claude -> Slack (ID: {response_id}): {response[:100]}...")
 
-                # Post to Slack (convert markdown bold to italic for Slack)
-                slack_response = convert_markdown_for_slack(response)
-                client.chat_postMessage(channel=channel, text=slack_response)
+                # Post to Slack using Block Kit markdown block
+                # Split response into chunks if longer than 3000 chars to stay within Block Kit limits
+                max_chunk_size = 3000
+                if len(response) <= max_chunk_size:
+                    client.chat_postMessage(
+                        channel=channel,
+                        blocks=[{"type": "markdown", "text": response}]
+                    )
+                else:
+                    # Split into chunks
+                    chunks = [response[i:i+max_chunk_size] for i in range(0, len(response), max_chunk_size)]
+                    for chunk in chunks:
+                        client.chat_postMessage(
+                            channel=channel,
+                            blocks=[{"type": "markdown", "text": chunk}]
+                        )
+                        time.sleep(0.5)  # Brief delay between chunks
 
         # Check for new or modified files in outbox
         for watch_dir in watch_dirs:
