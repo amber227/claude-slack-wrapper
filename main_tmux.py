@@ -65,11 +65,14 @@ context_file = repo_dir / 'SLACK_CONTEXT.md'
 
 def post_session_start_messages():
     """Post session start messages to Slack."""
-    client.chat_postMessage(channel=channel, text="============ *Start of New Session* ============")
-    commands_msg = """*Commands:*
+    client.chat_postMessage(
+        channel=channel,
+        blocks=[{"type": "markdown", "text": "============ **Start of New Session** ============"}]
+    )
+    commands_msg = """**Commands:**
 • `\\restart` - Restart this instance (new conversation)
 • `\\ignore` - Drop message"""
-    client.chat_postMessage(channel=channel, text=commands_msg)
+    client.chat_postMessage(channel=channel, blocks=[{"type": "markdown", "text": commands_msg}])
 
 def get_session_summary():
     """Get session summary information including git branch and session logs location."""
@@ -140,10 +143,16 @@ def post_session_end_message():
     # Send session summary first
     summary = get_session_summary()
     if summary:
-        client.chat_postMessage(channel=channel, text=f"*Session Summary:*\n{summary}")
+        client.chat_postMessage(
+            channel=channel,
+            blocks=[{"type": "markdown", "text": f"**Session Summary:**\n{summary}"}]
+        )
 
     # Then send end of session marker
-    client.chat_postMessage(channel=channel, text="============ *End of Session* ============")
+    client.chat_postMessage(
+        channel=channel,
+        blocks=[{"type": "markdown", "text": "============ **End of Session** ============"}]
+    )
 
 def start_claude_session():
     """Start a new Claude Code tmux session."""
@@ -222,7 +231,10 @@ def handle_command(command_text):
         post_session_start_messages()
         return True
     else:
-        client.chat_postMessage(channel=channel, text=f"Unknown command: {command}")
+        client.chat_postMessage(
+            channel=channel,
+            blocks=[{"type": "markdown", "text": f"Unknown command: {command}"}]
+        )
         return False
 
 # Main loop
