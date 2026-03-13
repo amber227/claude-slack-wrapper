@@ -5,7 +5,6 @@ import time
 import argparse
 import json
 import requests
-import re
 from pathlib import Path
 from slack_sdk import WebClient
 from dotenv import load_dotenv
@@ -63,30 +62,6 @@ if work_dir != repo_dir:
     print(f"Created hook configuration in {work_claude_dir}")
 
 context_file = repo_dir / 'SLACK_CONTEXT.md'
-
-def convert_markdown_for_slack(text):
-    """Convert markdown bold to italic, preserving code blocks and exponentiation."""
-    # Extract code blocks and inline code, replace with placeholders
-    code_blocks = []
-
-    def save_code(match):
-        code_blocks.append(match.group(0))
-        return f"\x00CODE_BLOCK_{len(code_blocks)-1}\x00"
-
-    # Save fenced code blocks (```...```)
-    text = re.sub(r'```.*?```', save_code, text, flags=re.DOTALL)
-
-    # Save inline code (`...`)
-    text = re.sub(r'`[^`]+`', save_code, text)
-
-    # Now replace ** with * in the remaining text
-    text = text.replace("**", "*")
-
-    # Restore code blocks
-    for i, code in enumerate(code_blocks):
-        text = text.replace(f"\x00CODE_BLOCK_{i}\x00", code)
-
-    return text
 
 def post_session_start_messages():
     """Post session start messages to Slack."""
