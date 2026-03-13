@@ -96,8 +96,78 @@ def post_session_start_messages():
 • `\\ignore` - Drop message"""
     client.chat_postMessage(channel=channel, text=commands_msg)
 
+def get_session_summary():
+    """Get session summary information including git branch and session logs location."""
+    summary_parts = []
+
+    # Get git branch and GitHub link
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            cwd=work_dir,
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            branch = result.stdout.strip()
+            summary_parts.append(f"*Branch:* `{branch}`")
+
+            # Get GitHub remote URL
+            result = subprocess.run(
+                ['git', 'remote', 'get-url', 'origin'],
+                cwd=work_dir,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                remote_url = result.stdout.strip()
+                # Convert git URL to GitHub web URL
+                # Handle both SSH (git@github.com:user/repo.git) and HTTPS (https://github.com/user/repo.git)
+                if remote_url.startswith('git@github.com:'):
+                    repo_path = remote_url.replace('git@github.com:', '').replace('.git', '')
+                    github_url = f"https://github.com/{repo_path}/tree/{branch}"
+                elif 'github.com' in remote_url:
+                    repo_path = remote_url.split('github.com/')[-1].replace('.git', '')
+                    github_url = f"https://github.com/{repo_path}/tree/{branch}"
+                else:
+                    github_url = None
+
+                if github_url:
+                    summary_parts.append(f"*GitHub:* {github_url}")
+    except Exception as e:
+        print(f"Failed to get git branch info: {e}")
+
+    # Get project name and session ID
+    try:
+        # Convert work_dir path to project directory name format
+        project_name = str(work_dir).replace('/', '-')
+        claude_dir = Path.home() / '.claude' / 'projects' / project_name
+
+        if claude_dir.exists():
+            # Find most recent session file
+            session_files = list(claude_dir.glob('*.jsonl'))
+            if session_files:
+                # Sort by modification time, get most recent
+                most_recent = max(session_files, key=lambda f: f.stat().st_mtime)
+                session_id = most_recent.stem  # Filename without .jsonl extension
+
+                log_path = f"~/.claude/projects/{project_name}/{session_id}"
+                summary_parts.append(f"*Session logs:* `{log_path}`")
+    except Exception as e:
+        print(f"Failed to get session info: {e}")
+
+    return "\n".join(summary_parts) if summary_parts else None
+
 def post_session_end_message():
     """Post session end message to Slack."""
+    # Send session summary first
+    summary = get_session_summary()
+    if summary:
+        client.chat_postMessage(channel=channel, text=f"*Session Summary:*\n{summary}")
+
+    # Then send end of session marker
     client.chat_postMessage(channel=channel, text="============ *End of Session* ============")
 
 def start_claude_session():
