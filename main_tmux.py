@@ -251,6 +251,12 @@ while True:
                     latest_ts = msg['ts']
                     continue
 
+                # Skip channel join/leave messages
+                subtype = msg.get('subtype', '')
+                if subtype in ['channel_join', 'channel_leave', 'group_join', 'group_leave']:
+                    latest_ts = msg['ts']
+                    continue
+
                 text = msg.get('text', '')
                 print(f"Debug - Raw text from Slack: '{text}'")
 
