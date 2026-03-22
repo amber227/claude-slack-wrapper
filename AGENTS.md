@@ -8,18 +8,9 @@ This is a wrapper that enables bidirectional interaction with agentic terminal t
 
 ## Development Guidelines
 
-### ⚠️ CRITICAL: Slack Channel Restrictions ⚠️
+### Slack Channel Usage
 
-**NEVER, UNDER ANY CIRCUMSTANCES, interact with ANY Slack channel except the one specified in `SLACK_CHANNEL` in the `.env` file.**
-
-This means:
-- **DO NOT** send messages to any other channel
-- **DO NOT** read messages from any other channel
-- **DO NOT** list, browse, or query other channels
-- **DO NOT** use any channel ID or name that is not explicitly from the `SLACK_CHANNEL` environment variable
-- **DO NOT** test, debug, or experiment in other channels
-
-**There is ONLY ONE channel you are permitted to interact with: the one in `SLACK_CHANNEL`. Violating this restriction could cause serious disruption to the workspace.**
+Only interact with the Slack channel specified in `SLACK_CHANNEL` in the `.env` file to avoid sending messages to the wrong channel.
 
 ### Package Management
 - Use `uv` for all Python package management
